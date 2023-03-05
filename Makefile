@@ -5,8 +5,8 @@ release:
 	cargo run --release $(SOURCE) $(OUTPUT)
 
 build:
-	nasm -f elf64 example.asm
-	ld example.o
+	nasm -f elf64 example.asm -o example.o
+	ld example.o -o example
 
 run:
 	./example

@@ -3,13 +3,13 @@
 
 mod compiler;
 
-use std::{fmt::{Display, Formatter, Result}, env::args, fs::{read_to_string, File}, io::Write};
+use std::{fmt::{Display, Formatter, Result}, env::args, fs::{read_to_string, File}, io::Write, collections::HashMap};
 use compiler::*;
 
 #[derive(Debug, Clone)]
 pub struct Function {
     name: String,
-    args: Vec<Arg>,
+    idents: HashMap<String, Ident>,
     statements: Vec<Statement>,
 }
 
@@ -17,7 +17,7 @@ pub struct Function {
 pub enum Statement {
     Assign(Ident, Expr),
     Call(String),
-    SysCall(usize, Vec<usize>),
+    SysCall(usize, Vec<Token>),
 }
 
 impl Display for Statement {
@@ -42,7 +42,11 @@ impl Display for Statement {
                     if i >= arg_names.len() {
                         panic!("Too many arguments to syscall");
                     }
-                    f.write_str(&format!("mov {}, {arg}\n", arg_names[i]))?;
+                    match arg {
+                        Token::Int(int) => f.write_str(&format!("mov {}, {int}\n", arg_names[i]))?,
+                        Token::Ident(ident) => f.write_str(&format!("mov {}, [rbp-{}*8]\n", arg_names[i], ident.parse::<usize>().unwrap()))?,
+                        _ => unreachable!()
+                    }
                 }
                 f.write_str("syscall")
             }
@@ -83,12 +87,6 @@ impl Display for Ident {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.write_str(&format!("[rbp-{}*8]", self.index))
     }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-struct Arg {
-    name: String,
-    t: Type
 }
 
 fn main() {

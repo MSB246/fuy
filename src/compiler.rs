@@ -28,7 +28,7 @@ pub enum Type {
     Int,
 }
 
-fn expr(tokens: &mut Iter<Token>, idents: &HashMap<&str, Ident>) -> Expr {
+fn expr(tokens: &mut Iter<Token>, idents: &HashMap<String, Ident>) -> Expr {
     match tokens.next().unwrap() {
         Token::Ident(ident) => Expr::Ident(*idents.get(&**ident).unwrap()),
         Token::Int(int) => Expr::Int(*int),
@@ -88,7 +88,6 @@ pub fn tokenize(source: &str) -> Vec<Token> {
 pub fn parse(tokens: Vec<Token>) -> Vec<Function> {
     let mut tokens = tokens.iter();
     let mut functions = vec![];
-    let mut idents = HashMap::new();
 
     while let Some(token) = tokens.next() {
         match token {
@@ -97,39 +96,58 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Function> {
                     Token::Ident(ident) => ident,
                     _ => unreachable!()
                 };
-                let args: Vec<Token> = tokens.take_while(|token| **token != Token::Eot).cloned().collect();
-                functions.push(Function { name: ident.clone(), statements: vec![] });
+                let args: Vec<String> = tokens.by_ref().take_while(|token| **token != Token::Eot).map(|token| {
+                    match token {
+                        Token::Ident(ident) => ident,
+                        _ => unreachable!()
+                    }
+                }).cloned().collect();
+
+                let mut idents = HashMap::new();
+
+                for (i, arg) in args.into_iter().enumerate() {
+                    idents.insert(arg, Ident { index: i });
+                }
+
+                functions.push(Function { name: ident.clone(), idents, statements: vec![] });
             }
             Token::FuncCall(ident) => {
                 functions.last_mut().unwrap().statements.push(Statement::Call(ident.clone()));
             }
             Token::SysCall => {
-                let args: Vec<usize> = tokens.by_ref().take_while(|token| **token != Token::Eot).map(|arg| {
+                // let function = functions.last_mut().unwrap();
+                let ident = match tokens.next().unwrap() {
+                    Token::Int(int) => *int as usize,
+                    _ => unreachable!()
+                };
+                let args: Vec<Token> = tokens.by_ref().take_while(|token| **token != Token::Eot).map(|arg| {
                     match arg {
-                        Token::Int(int) => *int as usize,
+                        Token::Int(_) => arg.clone(),
+                        Token::Ident(ident) => Token::Ident(functions.last().unwrap().idents.get(ident).unwrap().index.to_string()),
                         _ => unreachable!()
                     }
                 }).collect();
-                let (ident, args) = args.split_first().unwrap();
-                functions.last_mut().unwrap().statements.push(Statement::SysCall(*ident, args.to_vec()));
+                functions.last_mut().unwrap().statements.push(Statement::SysCall(ident, args.to_vec()));
             }
             Token::Type(_t) => match tokens.next().unwrap() {
                 Token::Ident(ident) => match tokens.next().unwrap() {
                     Token::Assign => {
-                        let expr = expr(tokens.by_ref(), &idents);
+                        let function = functions.last_mut().unwrap();
+
+                        let expr = expr(tokens.by_ref(), &function.idents);
                         match tokens.next().unwrap() {
                             Token::Eot => {
-                                let len = idents.len();
-                                let ident = match idents.get(&**ident) {
+                                let len = function.idents.len();
+                                let ident = match function.idents.get(ident) {
                                     Some(index) => *index,
                                     None => {
                                         let idt = Ident { index: len };
-                                        idents.insert(&**ident, idt);
+                                        function.idents.insert(ident.clone(), idt);
                                         idt
                                     },
                                 };
 
-                                functions.last_mut().unwrap().statements.push(
+                                function.statements.push(
                                     Statement::Assign(
                                         ident,
                                         expr
