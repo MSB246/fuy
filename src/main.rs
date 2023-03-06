@@ -1,9 +1,13 @@
 #![feature(let_chains)]
 #![feature(box_syntax)]
 
+#[macro_use]
+extern crate pest_derive;
+extern crate pest;
+
 mod compiler;
 
-use std::{fmt::{Display, Formatter, Result}, env::args, fs::{read_to_string, File}, io::Write, collections::HashMap};
+use std::{fmt::{Display, Formatter, Result}, env::args, fs::read_to_string, collections::HashMap};
 use compiler::*;
 
 #[derive(Debug, Clone)]
@@ -92,21 +96,24 @@ impl Display for Ident {
 fn main() {
     let args: Vec<String> = args().collect();
     let source = &args[1];
-    let output = &args[2];
+    // let output = &args[2];
+
 
     let source = read_to_string(source).unwrap();
-    let tokens = tokenize(&source);
-    let functions = parse(tokens);
-
-    let mut file = File::create(output).unwrap();
-
-    file.write_all(b"global _start\nsection .text\n").unwrap();
-    for function in &functions {
-        file.write_all(format!("{}:\n", function.name).as_bytes()).unwrap();
-        file.write_all(b"push rbp\nmov rbp, rsp\n").unwrap();
-        for statement in &function.statements {
-            file.write_all(format!("{statement}\n").as_bytes()).unwrap();
-        }
-        file.write_all(b"\nmov rsp, rbp\npop rbp\nret\n").unwrap();
-    }
+    p(&source);
+//     let source = read_to_string(source).unwrap();
+//     let tokens = tokenize(&source);
+//     let functions = parse(tokens);
+// 
+//     let mut file = File::create(output).unwrap();
+// 
+//     file.write_all(b"global _start\nsection .text\n").unwrap();
+//     for function in &functions {
+//         file.write_all(format!("{}:\n", function.name).as_bytes()).unwrap();
+//         file.write_all(b"push rbp\nmov rbp, rsp\n").unwrap();
+//         for statement in &function.statements {
+//             file.write_all(format!("{statement}\n").as_bytes()).unwrap();
+//         }
+//         file.write_all(b"\nmov rsp, rbp\npop rbp\nret\n").unwrap();
+//     }
 }

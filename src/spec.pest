@@ -1,0 +1,29 @@
+SEPO = { WHITE_SPACE* }
+SEPF = { WHITE_SPACE+ }
+BOT = { ":" }
+EOT = { ";" }
+
+func_key = { "func" }
+
+assign_sign = { "=" }
+add_sign = { "+" }
+sub_sign = { "-" }
+mul_sign = { "*" }
+div_sign = { "/" }
+
+ident = { ( ASCII_ALPHA | "_" ) ~ ( ASCII_ALPHANUMERIC | "_" )+ }
+int = { ASCII_DIGIT+ }
+
+type = { "int" }
+
+add = { add_sign ~ SEPO ~ expr ~ SEPF ~ expr ~ SEPO }
+sub = { sub_sign ~ SEPO ~ expr ~ SEPF ~ expr ~ SEPO }
+mul = { mul_sign ~ SEPO ~ expr ~ SEPF ~ expr ~ SEPO }
+div = { div_sign ~ SEPO ~ expr ~ SEPF ~ expr ~ SEPO }
+expr = { ( ident | int | add | sub | mul | div ) }
+
+assign = { type ~ SEPF ~ ident ~ SEPO ~ assign_sign ~ SEPO ~ expr ~ EOT }
+statement = { assign }
+func = { func_key ~ SEPF ~ ident ~ SEPO ~ BOT ~ ( statement | WHITE_SPACE )* ~ EOT }
+
+spec = _{ ( func | WHITE_SPACE )+ }

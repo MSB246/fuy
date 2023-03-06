@@ -1,8 +1,21 @@
 use std::{collections::HashMap, slice::Iter};
 
 use itertools::Itertools;
+use pest::Parser;
 
 use crate::{Statement, Ident, Expr, Function};
+
+#[derive(Parser)]
+#[grammar = "spec.pest"]
+struct Spec;
+
+pub fn p(source: &str) {
+    let pairs = Spec::parse(Rule::spec, source).unwrap_or_else(|e| panic!("{e}"));
+
+    for pair in pairs {
+        println!("rule: {:?} -> {}", pair.as_rule(), pair.as_str())
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
@@ -123,7 +136,6 @@ pub fn parse(tokens: Vec<Token>) -> Vec<Function> {
                 let args: Vec<Token> = tokens.by_ref().take_while(|token| **token != Token::Eot).map(|arg| {
                     match arg {
                         Token::Int(_) => arg.clone(),
-                        Token::Ident(ident) => Token::Ident(functions.last().unwrap().idents.get(ident).unwrap().index.to_string()),
                         _ => unreachable!()
                     }
                 }).collect();

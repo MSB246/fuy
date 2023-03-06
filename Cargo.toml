@@ -3,7 +3,7 @@ name = "fuy"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 itertools = "0.10.5"
+pest = "2.5.6"
+pest_derive = "2.5.6"
